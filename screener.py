@@ -15,11 +15,11 @@ warnings.filterwarnings("ignore")
 
 # ----------------------- THRESHOLDS (tune here) -----------------------
 DEPTH_MIN      = 0.03   # pullback must be at least this deep (3%)
-DEPTH_MAX      = 0.13   # ...and at most this deep ("shallow" ceiling). 0.18 = looser, 0.08 = tighter
+DEPTH_MAX      = 0.20   # ...and at most this deep ("shallow" ceiling). 0.18 = looser, 0.08 = tighter
 FROM_52W_MAX   = 0.20   # must be within 20% of its 52-week high (strength)
 RSI_LOW        = 38     # confirmation RSI band
 RSI_HIGH       = 68
-ADV_MIN        = 20e6   # min 20-day average dollar volume ($)
+ADV_MIN        = 1e6    # min 20-day average dollar volume ($)
 EXT_EMA10_MAX  = 0.07   # entry must not be >7% extended above the 10-EMA
 MIN_BARS       = 210    # need ~1y history for the 200-MA
 # ----------------------------------------------------------------------
