@@ -9,7 +9,7 @@ Universe:
 
 Tune the strategy with the THRESHOLDS block below.
 """
-import json, io, os, sys, datetime, warnings
+import json, io, os, sys, time, datetime, warnings
 import numpy as np, pandas as pd, requests, yfinance as yf
 warnings.filterwarnings("ignore")
 
@@ -79,22 +79,56 @@ def rsi(close, n=14):
     dn = (-d.clip(upper=0)).ewm(alpha=1/n, adjust=False).mean()
     return 100 - 100/(1 + up/dn.replace(0, np.nan))
 
+def _fetch_batch(batch):
+    """Download one chunk and return {ysym: DataFrame} for whatever came back with data."""
+    d = yf.download(batch, period="1y", interval="1d", group_by="ticker",
+                    auto_adjust=True, threads=True, progress=False)
+    out = {}
+    if len(batch) == 1:                       # single ticker -> flat columns, no ticker level
+        if not d.dropna(how="all").empty:
+            out[batch[0]] = d
+        return out
+    for t in batch:
+        try:
+            sub = d[t]
+            if not sub.dropna(how="all").empty:
+                out[t] = sub
+        except Exception:
+            pass
+    return out
+
+def download_all(ysyms, chunk=25, pause=1.5):
+    """Batched download to stay under Yahoo's rate limit, with one retry pass for misses."""
+    data = {}
+    for i in range(0, len(ysyms), chunk):
+        data.update(_fetch_batch(ysyms[i:i+chunk]))
+        print(f"  downloaded {min(i+chunk, len(ysyms))}/{len(ysyms)} (got {len(data)})")
+        time.sleep(pause)
+    missing = [s for s in ysyms if s not in data]
+    if missing:
+        print(f"retrying {len(missing)} missing tickers...")
+        time.sleep(4)
+        for i in range(0, len(missing), 15):
+            data.update(_fetch_batch(missing[i:i+15]))
+            time.sleep(2)
+    return data
+
 def screen():
     meta = load_universe()
     orig = list(meta.keys())
     ymap = {o: to_yahoo(o) for o in orig if to_yahoo(o)}
     ysyms = list(ymap.values())
 
-    print(f"downloading {len(ysyms)} tickers...")
-    data = yf.download(ysyms, period="1y", interval="1d", group_by="ticker",
-                       auto_adjust=True, threads=True, progress=False)
+    print(f"downloading {len(ysyms)} tickers (batched)...")
+    data = download_all(ysyms)
+    print(f"got {len(data)}/{len(ysyms)} tickers with data")
 
     results, scanned, last_date = [], 0, None
     for orig_sym, ysym in ymap.items():
-        try:
-            df = data[ysym].dropna()
-        except Exception:
+        df = data.get(ysym)
+        if df is None:
             continue
+        df = df.dropna()
         if len(df) < MIN_BARS:
             continue
         scanned += 1
