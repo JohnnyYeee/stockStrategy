@@ -22,6 +22,9 @@ RSI_HIGH       = 68
 ADV_MIN        = 1e6    # min 20-day average dollar volume ($)
 EXT_EMA10_MAX  = 0.07   # entry must not be >7% extended above the 10-EMA
 MIN_BARS       = 210    # need ~1y history for the 200-MA
+# --- universe & ranking ---
+INCLUDE_SP500  = True   # merge the full S&P 500 into the universe (bigger candidate pool)
+AI_BONUS       = 15.0   # score bonus for AI/custom names (from tickers.txt) so they rank higher
 # ----------------------------------------------------------------------
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,21 +41,36 @@ def to_yahoo(t):
         return t.replace(".", "-")    # US class shares: BRK.B -> BRK-B
     return t
 
-def load_universe():
-    p = os.path.join(HERE, "tickers.txt")
-    if os.path.exists(p):
-        raw = open(p).read()
-        toks = [x for x in raw.replace(",", " ").split()]
-        meta = {t.upper(): {"name": t.upper(), "sector": "Custom"} for t in toks}
-        print(f"using custom list: {len(meta)} tickers")
-        return meta
+def load_sp500():
     hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     r = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
                      headers=hdr, timeout=30)
-    df = pd.read_html(io.StringIO(r.text))[0]
-    meta = {row["Symbol"].upper(): {"name": row["Security"], "sector": row["GICS Sector"]}
-            for _, row in df.iterrows()}
-    print(f"using S&P 500: {len(meta)} tickers")
+    return pd.read_html(io.StringIO(r.text))[0]
+
+def load_universe():
+    meta = {}
+    # 1) AI / priority list from tickers.txt -> ai=True (gets AI_BONUS at scoring time)
+    p = os.path.join(HERE, "tickers.txt")
+    if os.path.exists(p):
+        toks = [x for x in open(p).read().replace(",", " ").split()]
+        for t in toks:
+            u = t.strip().upper()
+            if u:
+                meta[u] = {"name": u, "sector": "AI", "ai": True}
+        print(f"AI/custom list: {len(meta)} tickers")
+    # 2) optionally merge the full S&P 500 -> ai=False (unless already in the AI list)
+    if INCLUDE_SP500 or not meta:
+        df = load_sp500()
+        added = 0
+        for _, row in df.iterrows():
+            sym = str(row["Symbol"]).upper()
+            if sym in meta:                       # already an AI name: keep ai=True, enrich labels
+                meta[sym]["name"]   = row["Security"]
+                meta[sym]["sector"] = row["GICS Sector"]
+            else:
+                meta[sym] = {"name": row["Security"], "sector": row["GICS Sector"], "ai": False}
+                added += 1
+        print(f"merged S&P 500: +{added} (total {len(meta)})")
     return meta
 
 def rsi(close, n=14):
@@ -118,10 +136,11 @@ def screen():
         rs_score = np.clip((1-from_52)*30, 0, 30)
         shallow_score = np.clip((1-abs(depth-0.075)/0.075)*15, 0, 15)
         conf = (6 if up_day else 0) + (3 if rsi_turn else 0) + np.clip((1-abs(ext)/0.07)*6, 0, 6)
-        score = round(float(trend_score+rs_score+shallow_score+conf), 1)
+        is_ai = bool(meta[orig_sym].get("ai", False))
+        score = round(float(trend_score+rs_score+shallow_score+conf + (AI_BONUS if is_ai else 0)), 1)
 
         results.append(dict(
-            symbol=orig_sym, name=meta[orig_sym]["name"], sector=meta[orig_sym]["sector"],
+            symbol=orig_sym, name=meta[orig_sym]["name"], sector=meta[orig_sym]["sector"], ai=is_ai,
             price=round(float(px), 2), from_52w=round(float(from_52)*100, 1),
             depth=round(float(depth)*100, 1), from_high=round(float(cur_from_high)*100, 1),
             rsi=round(float(r.iloc[-1]), 1), ext_ema10=round(float(ext)*100, 1),
@@ -136,7 +155,8 @@ def screen():
         date=str(last_date.date()) if last_date is not None else "",
         generated_at=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         params=dict(depth_min=DEPTH_MIN, depth_max=DEPTH_MAX, from_52w_max=FROM_52W_MAX,
-                    rsi=[RSI_LOW, RSI_HIGH], adv_min=ADV_MIN),
+                    rsi=[RSI_LOW, RSI_HIGH], adv_min=ADV_MIN,
+                    include_sp500=INCLUDE_SP500, ai_bonus=AI_BONUS),
         results=results,
     )
     # latest snapshot
@@ -162,16 +182,18 @@ def write_summary(out):
     lines = []
     lines.append(f"右侧浅回调筛选 · Right-Side Shallow Pullback")
     lines.append(f"数据日 {out['date']}   生成 {out['generated_at']}")
-    lines.append(f"扫描 {out['scanned']} · 通过 {out['passed']}")
+    lines.append(f"扫描 {out['scanned']} · 通过 {out['passed']}"
+                 f"   (★ = AI/自选池, 评分含 +{AI_BONUS:.0f} 加成)")
     lines.append(f"参数: 回调 {p['depth_min']*100:.0f}-{p['depth_max']*100:.0f}% · "
                  f"RSI {p['rsi'][0]}-{p['rsi'][1]} · 距52周高<{p['from_52w_max']*100:.0f}% · "
                  f"日均成交额>${p['adv_min']/1e6:.0f}M")
     lines.append("")
-    lines.append(f"{'#':>2}  {'代码':<10} {'评分':>5}  {'回调%':>6} {'距52周高%':>9} {'RSI':>5} "
+    lines.append(f"{'#':>2} {'★':<1} {'代码':<10} {'评分':>5}  {'回调%':>6} {'距52周高%':>9} {'RSI':>5} "
                  f"{'偏离EMA10%':>10}  {'板块':<22} 名称")
-    lines.append("-" * 110)
+    lines.append("-" * 112)
     for i, r in enumerate(out["results"], 1):
-        lines.append(f"{i:>2}  {r['symbol']:<10} {r['score']:>5}  {r['depth']:>6} "
+        tag = "★" if r.get("ai") else " "
+        lines.append(f"{i:>2} {tag:<1} {r['symbol']:<10} {r['score']:>5}  {r['depth']:>6} "
                      f"{r['from_52w']:>9} {r['rsi']:>5} {r['ext_ema10']:>10}  "
                      f"{r['sector'][:22]:<22} {r['name']}")
     lines.append("")
