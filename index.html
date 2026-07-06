@@ -101,15 +101,20 @@ select{appearance:none; background:var(--panel); border:1px solid var(--line);
   text-transform:uppercase; padding:4px 2px 12px}
 .list{display:flex; flex-direction:column; gap:10px}
 .row{display:grid; grid-template-columns:30px 168px 1fr 230px 120px;
-  align-items:center; gap:18px; background:var(--panel);
+  align-items:center; position:relative; gap:18px; background:var(--panel);
   border:1px solid var(--line); border-radius:var(--r); padding:15px 18px;
   box-shadow:0 1px 3px rgba(22,34,48,.05);
   transition:border-color .18s, transform .18s, box-shadow .18s}
 .row:hover{border-color:rgba(12,156,134,.5); transform:translateX(2px);
   box-shadow:0 4px 14px rgba(22,34,48,.09)}
+/* AI / 自选池 高亮:左侧渐变竖条 + 淡金底 */
+.row.ai{background:linear-gradient(90deg,rgba(188,119,16,.06),var(--panel) 42%)}
+.row.ai::before{content:""; position:absolute; left:0; top:11px; bottom:11px; width:3px;
+  border-radius:0 3px 3px 0; background:linear-gradient(var(--amber),var(--phos))}
 .rank{font-family:var(--mono); font-size:13px; color:var(--faint); text-align:center}
 .rank.top{color:var(--amber)}
 .idname .tkr{font-family:var(--disp); font-weight:600; font-size:19px; letter-spacing:-.01em}
+.idname .tkr .star{color:var(--amber); font-size:13px; margin-left:6px; vertical-align:1px}
 .idname .nm{font-size:11.5px; color:var(--muted); margin-top:2px; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis; max-width:155px}
 .idname .sec{display:inline-flex; align-items:center; gap:6px; margin-top:7px;
@@ -204,6 +209,7 @@ select{appearance:none; background:var(--panel); border:1px solid var(--line);
     <span class="lg"><svg width="20" height="14"><polygon points="10,2 4,12 16,12" fill="var(--amber)"/></svg><b>摆动高点</b>近期峰值</span>
     <span class="lg"><svg width="20" height="14"><polygon points="10,12 4,2 16,2" fill="var(--red)"/></svg><b>浅回调低点</b>回撤止于此</span>
     <span class="lg"><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--phos)" stroke="var(--bg)" stroke-width="1.5"/><circle cx="8" cy="8" r="8" fill="none" stroke="var(--phos)" stroke-opacity=".35"/></svg><b>右侧拐头</b>当前入场区</span>
+    <span class="lg"><span style="color:var(--amber);font-size:15px;line-height:1">★</span><b>AI/自选</b>来自 tickers.txt · 评分 +15</span>
   </div>
 
   <div class="controls">
@@ -229,9 +235,9 @@ select{appearance:none; background:var(--panel); border:1px solid var(--line);
   <div class="rerun">
     <span class="eyebrow">部署 · 自动刷新</span>
     <h3 style="margin-top:10px">数据每天自动更新</h3>
-    <p>这是纯静态页面,本身不联网拉行情——它读取同目录下的 <code style="color:var(--amber);font-family:var(--mono)">data.json</code>。该文件由仓库里的 GitHub Actions 定时任务在<b>开盘后与收盘后</b>自动重跑并提交;页面打开时取最新一版,开着的标签页每 5 分钟自动重取一次。</p>
+    <p>这是纯静态页面,本身不联网拉行情——它读取同目录下的 <code style="color:var(--amber);font-family:var(--mono)">data.json</code>。该文件由仓库里的 GitHub Actions 定时任务在<b>每个交易日收盘后约 1.5 小时</b>自动重跑并提交一次(用已定稿的日线);页面打开时取最新一版,开着的标签页每 5 分钟自动重取一次。</p>
     <div style="display:flex;flex-direction:column;gap:11px;margin-top:18px">
-      <div style="font-size:13px;color:var(--muted);line-height:1.6"><span style="display:inline-block;min-width:88px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--phos)">换股票池</span>编辑 <code style="color:var(--amber);font-family:var(--mono)">tickers.txt</code>(逗号/空格/换行分隔,支持 1024.HK、600519.SS);删掉该文件则回到标普500全量。</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6"><span style="display:inline-block;min-width:88px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--phos)">换股票池</span>编辑 <code style="color:var(--amber);font-family:var(--mono)">tickers.txt</code> = AI/自选池(逗号/空格/换行分隔,支持 1024.HK、600519.SS),这些票标 ★ 且评分 <code style="color:var(--amber);font-family:var(--mono)">+15</code>;S&P 500 已一并纳入候选(由 <code style="color:var(--amber);font-family:var(--mono)">screener.py</code> 顶部 <code style="color:var(--amber);font-family:var(--mono)">INCLUDE_SP500</code> 控制)。</div>
       <div style="font-size:13px;color:var(--muted);line-height:1.6"><span style="display:inline-block;min-width:88px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--phos)">调参数</span>编辑 <code style="color:var(--amber);font-family:var(--mono)">screener.py</code> 顶部 THRESHOLDS:回调深度 DEPTH_MAX、RSI 区间、流动性门槛等。</div>
       <div style="font-size:13px;color:var(--muted);line-height:1.6"><span style="display:inline-block;min-width:88px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--phos)">手动刷新</span>到仓库 Actions 页点 “Run workflow” 立刻重跑一版。</div>
       <div style="font-size:13px;color:var(--muted);line-height:1.6"><span style="display:inline-block;min-width:88px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--phos)">AI 读取</span>结构化抓 <code style="color:var(--amber);font-family:var(--mono)">data.json</code>、纯文本抓 <code style="color:var(--amber);font-family:var(--mono)">summary.txt</code>、历史抓 <code style="color:var(--amber);font-family:var(--mono)">data/&lt;日期&gt;.json</code>。</div>
@@ -261,7 +267,7 @@ const SECTOR_COLORS = {
   'Industrials':'#EBA94A','Financials':'#41D9C1','Materials':'#9B8CFF',
   'Information Technology':'#5FCf8a','Health Care':'#E8716E','Consumer Discretionary':'#E89BC4',
   'Consumer Staples':'#7FB3E8','Energy':'#E8C24A','Utilities':'#6FD4E8',
-  'Real Estate':'#C0A07A','Communication Services':'#B98CFF','Custom':'#41D9C1'
+  'Real Estate':'#C0A07A','Communication Services':'#B98CFF','Custom':'#41D9C1','AI':'#BC7710'
 };
 const sc = s => SECTOR_COLORS[s] || '#7E8E9E';
 
@@ -291,10 +297,10 @@ function trace(spark){
 }
 
 function rowHTML(r,i){
-  return `<div class="row" data-sym="${r.symbol}">
+  return `<div class="row${r.ai?' ai':''}" data-sym="${r.symbol}">
     <div class="rank num ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</div>
     <div class="idname">
-      <div class="tkr">${r.symbol}</div><div class="nm">${r.name}</div>
+      <div class="tkr">${r.symbol}${r.ai?'<span class="star" title="AI/自选池 · 评分含 +15 加成">★</span>':''}</div><div class="nm">${r.name}</div>
       <div class="sec"><i style="background:${sc(r.sector)}"></i>${r.sector}</div>
     </div>
     <div class="trace">${trace(r.spark)}</div>
