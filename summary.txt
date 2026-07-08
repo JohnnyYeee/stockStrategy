@@ -1,28 +1,9 @@
 右侧浅回调筛选 · Right-Side Shallow Pullback
-数据日 2026-07-07   生成 2026-07-07 22:35 UTC
-扫描 550 · 通过 19   (★ = AI/自选池, 评分含 +15 加成)
+数据日 2026-07-07   生成 2026-07-08 08:53 UTC
+扫描 69 · 通过 0   (★ = AI/自选池, 评分含 +15 加成)
 参数: 回调 3-20% · RSI 38-68 · 距52周高<20% · 日均成交额>$1M
 
  # ★ 代码            评分     回调%    距52周高%   RSI   偏离EMA10%  板块                     名称
 ----------------------------------------------------------------------------------------------------------------
- 1   CNC         95.1     6.1       4.6  59.6        0.9  Health Care            Centene Corporation
- 2   CVS         91.7     4.1       1.7  64.2        1.2  Health Care            CVS Health
- 3   ELV         90.9     4.7       2.0  61.2        3.5  Health Care            Elevance Health
- 4   UNH         90.0     3.5       0.5  64.2        2.2  Health Care            UnitedHealth Group
- 5   FRT         89.9     5.0       2.5  54.6        0.2  Real Estate            Federal Realty Investment Trust
- 6   KIM         85.6     6.8       3.0  55.9        0.2  Real Estate            Kimco Realty
- 7   MO          81.6     4.1       1.6  57.0        1.1  Consumer Staples       Altria
- 8   HLT         81.0     8.1       4.7  55.6        0.8  Consumer Discretionary Hilton Worldwide
- 9   EXPD        80.3     5.7       1.6  58.9        0.8  Industrials            Expeditors International
-10   MRK         71.7     4.3       1.1  63.2        2.4  Health Care            Merck & Co.
-11   ABNB        69.3     5.2       0.9  62.8        2.3  Consumer Discretionary Airbnb
-12   EXR         68.3     4.9       2.7  54.4        0.4  Real Estate            Extra Space Storage
-13   RF          66.8     3.6       2.0  66.5        1.6  Financials             Regions Financial Corporation
-14   REG         65.7     3.5       1.5  57.5        0.9  Real Estate            Regency Centers
-15   AEE         62.6     5.4       3.3  57.2        1.0  Utilities              Ameren
-16   CNP         61.6     3.5       1.6  58.6        0.9  Utilities              CenterPoint Energy
-17   HBAN        58.0     4.1       5.7  66.3        1.5  Financials             Huntington Bancshares
-18   XEL         56.0     4.3       3.1  53.7        0.1  Utilities              Xcel Energy
-19   DXCM        51.7    14.7      18.2  57.8        3.5  Health Care            Dexcom
 
 注:技术筛选与研究用途,非投资建议。结构化数据见同目录 data.json;历史见 data/<日期>.json。
