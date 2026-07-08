@@ -23,7 +23,7 @@ ADV_MIN        = 1e6    # min 20-day average dollar volume ($)
 EXT_EMA10_MAX  = 0.07   # entry must not be >7% extended above the 10-EMA
 MIN_BARS       = 210    # need ~1y history for the 200-MA
 # --- universe & ranking ---
-INCLUDE_SP500  = True   # merge the full S&P 500 into the universe (bigger candidate pool)
+INCLUDE_SP500  = False  # merge the full S&P 500 into the universe (bigger candidate pool)
 AI_BONUS       = 15.0   # score bonus for AI/custom names (from tickers.txt) so they rank higher
 # ----------------------------------------------------------------------
 
